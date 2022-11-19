@@ -27,10 +27,6 @@ services:
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
       - "traefik.docker.network=web"
     networks:
-      - web
+      - default
 volumes:
   portainer_data:
-
-networks:
-  web:
-    external: true
