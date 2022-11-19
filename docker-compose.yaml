@@ -1,0 +1,73 @@
+version: '3.7'
+
+services:
+  prometheus: 
+    image: prom/prometheus:latest
+    container_name: prometheus
+    depends_on:
+      - nodeexporter
+    #  - cadvisor
+    ports:
+      - 9090:9090
+    volumes:
+      - /media/PROMETHEUS_DATA:/prometheus
+      - /media/PROMETHEUS/config.yaml:/etc/prometheus/prometheus.yml
+    user: "1000"
+    restart: always
+    environment:
+      TZ: ${TZ}
+    #labels:
+    #    com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      frontend-mo:
+        aliases:
+          - prometheus
+      backend-mo:
+        aliases:
+          - prometheus
+
+  nodeexporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: always
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.ignored-mount-points="^(/rootfs|/host|)/(sys|proc|dev|host|etc)($$|/)"'
+      - '--collector.filesystem.ignored-fs-types="^(sys|proc|auto|cgroup|devpts|ns|au|fuse\.lxc|mqueue)(fs|)$$"'
+    environment:
+      TZ: ${TZ}
+    #labels:
+    #    com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      backend-mo:
+        aliases:
+          - nodeexporter
+    
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: always
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    environment:
+      TZ: ${TZ}
+    command:
+      - --housekeeping_interval=15s
+      - --global_housekeeping_interval=15s
+      - --docker_only=true
+      - --disable_metrics=percpu,sched,tcp,udp,disk,diskIO,accelerator,hugetlb,referenced_memory,cpu_topology,resctrl
+    #labels:
+    #    com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      backend-mo:
+        aliases:
+          - cadvisor
